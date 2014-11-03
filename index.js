@@ -29,6 +29,7 @@ module.exports = new EventEmitter();
 /**
  * Connects to a RETS Service and creates a RETS client instance.
  *
+ * Using a hash:
  * @param settings.loginUrl RETS login URL (i.e http://<MLS_DOMAIN>/rets/login.ashx)
  * @param settings.username username credential
  * @param settings.password password credential
@@ -36,12 +37,24 @@ module.exports = new EventEmitter();
  * @param settings.userAgentPassword the user-agent password to use
  * @param settings.version the RETS version
  *
+ * OR using discrete arguments (preserve backward compatibility):
+ * @param loginUrl RETS login URL (i.e http://<MLS_DOMAIN>/rets/login.ashx)
+ * @param username username credential
+ * @param password password credential
+ *
  * @event connection.success Connection succeeded.
  * @event connection.failure(error) Failed to connect.
  *
  * @return RETS Client
  */
 module.exports.getClient = function(settings) {
+
+    var settings = (typeof settings === 'object') ? settings : {};
+    if (arguments.length === 3) {
+        settings.loginUrl = arguments[0];
+        settings.username = arguments[1];
+        settings.password = arguments[2];
+    }
 
     var client = new Client();
 
