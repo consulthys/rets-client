@@ -5,6 +5,7 @@ var logger = require('winston'),
     auth = require('./lib/auth.js'),
     metadata = require('./lib/metadata.js'),
     search = require('./lib/search.js'),
+    update = require('./lib/update.js'),
     object = require('./lib/object.js');
 
 var KEY_MEMBER_NAME = "MemberName";
@@ -109,6 +110,10 @@ Client.prototype.configure = function(systemData) {
     self.searchModule = search(self.systemData[KEY_SEARCH]);
     //object module
     self.objectModule = object(self.systemData[KEY_GET_OBJECT]);
+    //update module
+    if (KEY_UPDATE in self.systemData) {
+        self.updateModule = update(self.systemData[KEY_UPDATE]);
+    }
 };
 
 /**
@@ -513,6 +518,29 @@ Client.prototype.getPhotos = function(resourceType, photoType, matrixId, callbac
     });
 };
 
+/**
+ *
+ * Helper that performs a targeted RETS update and parses results.
+ *
+ * @param resourceType Rets resource type (ex: Property)
+ * @param classType  Rets class type (ex: RESI)
+ * @param fields the fields to update
+ * @param auth additional authorization parameters to perform delegated updated
+ * @param callback(error, data) (optional)
+ *
+ * @event update.success(data) Update is successful
+ * @event update.failure(error) Update failed
+ */
+Client.prototype.update = function(resourceType, classType, fields, auth, callback) {
+    var self = this;
 
+    if (!self.updateModule) {
+        processRetsResponse(self, "Update not supported", null, "update.success", "update.failure", callback);
+    } else {
+        self.updateModule.update(resourceType, classType, fields, auth, function(error, data) {
+            processRetsResponse(self, error, data, "update.success", "update.failure", callback);
+        });
+    }
+};
 
 
