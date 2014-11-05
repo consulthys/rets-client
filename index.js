@@ -60,7 +60,7 @@ module.exports.getClient = function(settings) {
 
     var client = new Client();
 
-    auth.login(settings, function(error, systemData) {
+    auth.login(settings, function(error, systemData, retsSession) {
         if (error) {
 
             client.emit('connection.failure', error);
@@ -68,7 +68,7 @@ module.exports.getClient = function(settings) {
             return;
         }
 
-        client.configure(settings.loginUrl, systemData);
+        client.configure(systemData, retsSession);
 
         client.emit('connection.success');
     });
@@ -89,8 +89,9 @@ util.inherits(Client, EventEmitter);
 /**
  * Configures Rets Client
  * @param systemData RETS system URL data object (Login, GetMetadata, GetObject, etc.)
+ * @param retsSession a valid and pre-configured RETS session that can be used to perform sub-sequent transactions
  */
-Client.prototype.configure = function(loginUrl, systemData) {
+Client.prototype.configure = function(systemData, retsSession) {
 
     var self = this;
 
@@ -104,21 +105,29 @@ Client.prototype.configure = function(loginUrl, systemData) {
     self.metadataVersion = self.systemData[KEY_METADATA_VERSION];
     self.metadataTimestamp = self.systemData[KEY_METADATA_TIMESTAMP];
     self.minMetadataTimestamp = self.systemData[KEY_MIN_METADATA_TIMESTAMP];
+    self.loginUrl = self.systemData[KEY_LOGIN]; // the login URL is always absolute as per the spec
+
+    // returns a valid request object pre-configured to hit the given moduleURL
+    // with the proper HTTP headers and cookies retrieved from the freshly
+    // established retsSession
+    var _subSession = function(moduleURL) {
+        return retsSession.defaults({
+            uri: url.resolve(self.loginUrl, moduleURL)
+        });
+    };
 
     //metadata module
-    var metadataUrl = url.resolve(loginUrl, self.systemData[KEY_GET_METADATA]);
-    self.metadataModule = metadata(metadataUrl);
+    self.metadataModule = metadata(_subSession(self.systemData[KEY_GET_METADATA]));
     //search module
-    var searchUrl = url.resolve(loginUrl, self.systemData[KEY_SEARCH]);
-    self.searchModule = search(searchUrl);
+    self.searchModule = search(_subSession(self.systemData[KEY_SEARCH]));
     //object module
-    var objectUrl = url.resolve(loginUrl, self.systemData[KEY_GET_OBJECT]);
-    self.objectModule = object(objectUrl);
+    self.objectModule = object(_subSession(self.systemData[KEY_GET_OBJECT]));
     //update module
     if (KEY_UPDATE in self.systemData) {
-        var updateUrl = url.resolve(loginUrl, self.systemData[KEY_UPDATE]);
-        self.updateModule = update(updateUrl);
+        self.updateModule = update(_subSession(self.systemData[KEY_UPDATE]));
     }
+    //logout request
+    self.logoutRequest = _subSession(self.systemData[KEY_LOGOUT]);
 };
 
 /**
@@ -156,7 +165,7 @@ var processRetsResponse = function(client, error, data, eventSuccess, eventFailu
 /**
  * Logout RETS user.
  *
- * @param url Logout URL
+ * @param logoutRequest Pre-configured logout request
  * @param callback(error)
  *
  * @event logout.success Disconnect was successful
@@ -166,7 +175,7 @@ var processRetsResponse = function(client, error, data, eventSuccess, eventFailu
 Client.prototype.logout = function(callback) {
     var self = this;
 
-    auth.logout(self.systemData[KEY_LOGOUT], function(error){
+    auth.logout(self.logoutRequest, function(error){
         processRetsResponse(self, error, null, "logout.success", "logout.failure", callback);
     });
 };
@@ -453,9 +462,9 @@ Client.prototype.query = function(resourceType, classType, queryString, callback
     var self = this;
 
     self.searchModule.query(resourceType, classType, queryString, function(error, data){
-        processRetsResponse(self, error, data, "query.success", "query.failure", callback);
-    },
-    _limit);
+            processRetsResponse(self, error, data, "query.success", "query.failure", callback);
+        },
+        _limit);
 };
 
 /**
