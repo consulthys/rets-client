@@ -2,6 +2,7 @@ var logger = require('winston'),
     EventEmitter = require('events').EventEmitter,
     assert = require("assert"),
     util = require('util'),
+    url = require('url'),
     auth = require('./lib/auth.js'),
     metadata = require('./lib/metadata.js'),
     search = require('./lib/search.js'),
@@ -67,7 +68,7 @@ module.exports.getClient = function(settings) {
             return;
         }
 
-        client.configure(systemData);
+        client.configure(settings.loginUrl, systemData);
 
         client.emit('connection.success');
     });
@@ -89,7 +90,7 @@ util.inherits(Client, EventEmitter);
  * Configures Rets Client
  * @param systemData RETS system URL data object (Login, GetMetadata, GetObject, etc.)
  */
-Client.prototype.configure = function(systemData) {
+Client.prototype.configure = function(loginUrl, systemData) {
 
     var self = this;
 
@@ -105,14 +106,18 @@ Client.prototype.configure = function(systemData) {
     self.minMetadataTimestamp = self.systemData[KEY_MIN_METADATA_TIMESTAMP];
 
     //metadata module
-    self.metadataModule = metadata(self.systemData[KEY_GET_METADATA]);
+    var metadataUrl = url.resolve(loginUrl, self.systemData[KEY_GET_METADATA]);
+    self.metadataModule = metadata(metadataUrl);
     //search module
-    self.searchModule = search(self.systemData[KEY_SEARCH]);
+    var searchUrl = url.resolve(loginUrl, self.systemData[KEY_SEARCH]);
+    self.searchModule = search(searchUrl);
     //object module
-    self.objectModule = object(self.systemData[KEY_GET_OBJECT]);
+    var objectUrl = url.resolve(loginUrl, self.systemData[KEY_GET_OBJECT]);
+    self.objectModule = object(objectUrl);
     //update module
     if (KEY_UPDATE in self.systemData) {
-        self.updateModule = update(self.systemData[KEY_UPDATE]);
+        var updateUrl = url.resolve(loginUrl, self.systemData[KEY_UPDATE]);
+        self.updateModule = update(updateUrl);
     }
 };
 
