@@ -4,7 +4,7 @@
   "description": "A RETS client (Real Estate Transaction Standard).",
   "main": "index.js",
   "dependencies": {
-    "request": "~2.39.0",
+    "request": "~2.47.0",
     "stream-buffers": "~0.2.5",
     "winston": "~0.7.3",
     "xml2js": "~0.4.4",
