@@ -23,6 +23,7 @@ var KEY_GET_METADATA = "GetMetadata";
 var KEY_METADATA_VERSION = "MetadataVersion";
 var KEY_METADATA_TIMESTAMP = "MetadataTimestamp";
 var KEY_MIN_METADATA_TIMESTAMP = "MinMetadataTimestamp";
+var KEY_TIMEOUT_SECONDS = "TimeoutSeconds";
 var KEY_RETS_VERSION = "retsVersion";
 var KEY_RETS_SERVER = "retsServer";
 
@@ -68,7 +69,7 @@ module.exports.getClient = function(settings) {
             return;
         }
 
-        client.configure(systemData, retsSession);
+        client.configure(systemData, retsSession, settings.loginUrl);
 
         client.emit('connection.success');
     });
@@ -90,8 +91,9 @@ util.inherits(Client, EventEmitter);
  * Configures Rets Client
  * @param systemData RETS system URL data object (Login, GetMetadata, GetObject, etc.)
  * @param retsSession a valid and pre-configured RETS session that can be used to perform sub-sequent transactions
+ * @param loginUrl the login url to get the host name (only RETS 1.7.2 an onwards mandates that LoginUrl be an absolute URL in the capability list)
  */
-Client.prototype.configure = function(systemData, retsSession) {
+Client.prototype.configure = function(systemData, retsSession, loginUrl) {
 
     var self = this;
 
@@ -105,7 +107,12 @@ Client.prototype.configure = function(systemData, retsSession) {
     self.metadataVersion = self.systemData[KEY_METADATA_VERSION];
     self.metadataTimestamp = self.systemData[KEY_METADATA_TIMESTAMP];
     self.minMetadataTimestamp = self.systemData[KEY_MIN_METADATA_TIMESTAMP];
-    self.loginUrl = self.systemData[KEY_LOGIN]; // the login URL is always absolute as per the spec
+    self.timeoutSeconds = self.systemData[KEY_TIMEOUT_SECONDS];
+
+    // the login URL should be absolute as per the spec
+    // only mandatory since RETS 1.7.2 onwards !!! use loginUrl if pre-1.7.2
+    // should use semver or similar but good enough for now
+    self.loginUrl = /1.7.2$/.test(self.retsVersion) ? self.systemData[KEY_LOGIN] : loginUrl;
 
     // returns a valid request object pre-configured to hit the given moduleURL
     // with the proper HTTP headers and cookies retrieved from the freshly
@@ -551,6 +558,8 @@ Client.prototype.update = function(resourceType, classType, fields, auth, callba
     if (!self.updateModule) {
         processRetsResponse(self, "Update not supported", null, "update.success", "update.failure", callback);
     } else {
+        // add currently RETS session id to compute the proper delegate auth
+        auth.sessionId = self.systemData.sessionId;
         self.updateModule.update(resourceType, classType, fields, auth, function(error, data) {
             processRetsResponse(self, error, data, "update.success", "update.failure", callback);
         });
