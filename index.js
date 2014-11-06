@@ -545,6 +545,7 @@ Client.prototype.getPhotos = function(resourceType, photoType, matrixId, callbac
  *
  * @param resourceType Rets resource type (ex: Property)
  * @param classType  Rets class type (ex: RESI)
+ * @param updateType the type of update to carry out (see section 11.3.4 of the RETS spec)
  * @param fields the fields to update
  * @param auth additional authorization parameters to perform delegated updated
  * @param callback(error, data) (optional)
@@ -552,7 +553,7 @@ Client.prototype.getPhotos = function(resourceType, photoType, matrixId, callbac
  * @event update.success(data) Update is successful
  * @event update.failure(error) Update failed
  */
-Client.prototype.update = function(resourceType, classType, fields, auth, callback) {
+Client.prototype.update = function(resourceType, classType, updateType, fields, auth, callback) {
     var self = this;
 
     if (!self.updateModule) {
@@ -560,7 +561,7 @@ Client.prototype.update = function(resourceType, classType, fields, auth, callba
     } else {
         // add currently RETS session id to compute the proper delegate auth
         auth.sessionId = self.systemData.sessionId;
-        self.updateModule.update(resourceType, classType, fields, auth, function(error, data) {
+        self.updateModule.update(resourceType, classType, updateType, fields, auth, function(error, data) {
             processRetsResponse(self, error, data, "update.success", "update.failure", callback);
         });
     }
