@@ -153,10 +153,10 @@ var processRetsResponse = function(client, error, data, eventSuccess, eventFailu
 
     if (error) {
         if (callback)
-            callback(error);
+            callback(error, data);
 
         if (eventFailure)
-            client.emit(eventFailure, error);
+            client.emit(eventFailure, error, data);
 
         return;
     }
