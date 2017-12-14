@@ -459,7 +459,6 @@ Client.prototype.searchRets = function(_queryOptions, callback) {
  * @param resourceType Rets resource type (ex: Property)
  * @param classType  Rets class type (ex: RESI)
  * @param queryString Rets query string. See RETS specification - (ex: MatrixModifiedDT=2014-01-01T00:00:00.000+)
- * @param callback(error, data) (optional)
  * @param options (optional) Other options, such as:
  *          _limit: limits the number of records returned.
  *          _select: specifies the fields to return.
@@ -467,11 +466,11 @@ Client.prototype.searchRets = function(_queryOptions, callback) {
  * @event query.success(data) Query is successful
  * @event query.failure(error) Query failed
  */
-Client.prototype.query = function(resourceType, classType, queryString, callback, options) {
+Client.prototype.query = function(resourceType, classType, queryString, options) {
     var self = this;
 
     self.searchModule.query(resourceType, classType, queryString, function(error, data){
-            processRetsResponse(self, error, data, "query.success", "query.failure", callback);
+            processRetsResponse(self, error, data, "query.success", "query.failure");
         },
         options);
 };
