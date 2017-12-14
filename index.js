@@ -126,7 +126,7 @@ Client.prototype.configure = function(systemData, retsSession, loginUrl) {
     //metadata module
     self.metadataModule = metadata(_subSession(self.systemData[KEY_GET_METADATA]));
     //search module
-    self.searchModule = search(_subSession(self.systemData[KEY_SEARCH]));
+    self.searchModule = search(self, _subSession(self.systemData[KEY_SEARCH]));
     //object module
     self.objectModule = object(_subSession(self.systemData[KEY_GET_OBJECT]));
     //update module
