@@ -515,6 +515,7 @@ Client.prototype.getObject = function(resourceType, objectType, objectId, callba
  * @param resourceType Rets resource type (ex: Property)
  * @param photoType Photo object type, based on getObjects meta call (ex: LargePhoto, Photo)
  * @param matrixId Photo matrix identifier.
+ * @param index the index of the photo to retrieve (all if not specified, i.e. *)
  * @param callback(error, dataList) (optional)
  *
  *      Each item in data list is an object with the following data elements:
@@ -532,10 +533,10 @@ Client.prototype.getObject = function(resourceType, objectType, objectId, callba
  * @event photos.failure(error) Photos call failed
  *
  */
-Client.prototype.getPhotos = function(resourceType, photoType, matrixId, callback) {
+Client.prototype.getPhotos = function(resourceType, photoType, matrixId, index, callback) {
     var self = this;
 
-    self.objectModule.getPhotos(resourceType, photoType, matrixId, function(error, data) {
+    self.objectModule.getPhotos(resourceType, photoType, matrixId, index, function(error, data) {
         processRetsResponse(self, error, data, "photos.success", "photos.failure", callback);
     });
 };
