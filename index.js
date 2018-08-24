@@ -113,6 +113,7 @@ Client.prototype.configure = function(systemData, retsSession, loginUrl) {
     // only mandatory since RETS 1.7.2 onwards !!! use loginUrl if pre-1.7.2
     // should use semver or similar but good enough for now
     self.loginUrl = /1.7.2$/.test(self.retsVersion) ? self.systemData[KEY_LOGIN] : loginUrl;
+    if (self.loginUrl.indexOf("http") < 0) self.loginUrl = loginUrl;
 
     // returns a valid request object pre-configured to hit the given moduleURL
     // with the proper HTTP headers and cookies retrieved from the freshly
